@@ -48,6 +48,8 @@
   },
   "settings": {
     "tabs": {
+      "agent": "エージェント",
+      "general": "一般",
       "requests": "権限",
       "sites": "サイト",
       "language": "言語",

@@ -72,6 +72,6 @@ test("the keys built at run time exist", () => {
     assert.ok(`settings.sites.modes.${mode}.hint` in en);
   }
   for (const group of ["reading", "acting", "tabs", "devtools"]) assert.ok(`settings.requests.groups.${group}` in en);
-  for (const tab of ["sites", "requests", "language", "theme", "server"]) assert.ok(`settings.tabs.${tab}` in en);
+  for (const tab of ["agent", "general", "sites", "requests", "language", "theme", "server"]) assert.ok(`settings.tabs.${tab}` in en);
   for (const reason of ["name_taken", "reserved", "too_many", "invalid_name", "other"]) assert.ok(`pair.refused.${reason}` in en);
 });

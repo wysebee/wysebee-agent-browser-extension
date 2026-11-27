@@ -36,14 +36,25 @@ const REQUEST_KINDS = [
   },
 ];
 
-const TABS = ["sites", "requests", "language", "theme", "server"];
+// The Agent tab holds this browser's agent (General: pairing, the Enabled switch, Unpair)
+// and what it may do (Sites, Permissions, Server), as sub tabs.
+const TABS = ["agent", "language", "theme"];
+const SUBTABS = ["general", "sites", "requests", "server"];
+
+/** The tab last shown; one saved before the Agent tab (sites, requests, server) opens as
+ * Agent. The Agent tab always opens on General. */
+function savedTab() {
+  const tab = localStorage.getItem("tab");
+  return TABS.includes(tab) ? tab : "agent";
+}
 
 const $ = (id) => document.getElementById(id);
 
 let state = null;
 // What only this page knows.
 const ui = {
-  tab: TABS.includes(localStorage.getItem("tab")) ? localStorage.getItem("tab") : "sites",
+  tab: savedTab(),
+  sub: "general",
   busy: false,
   pairError: "",
   nameDraft: "",
@@ -108,12 +119,19 @@ function render() {
     );
   });
 
-  draw("tabs", [ui.tab], renderTabs);
-  if (ui.tab === "sites") {
+  draw("tabs", [ui.tab, ui.sub], renderTabs);
+  const agent = ui.tab === "agent";
+  const general = agent && ui.sub === "general";
+  $("subtabs").hidden = !agent;
+  $("link").hidden = !general;
+  $("tab-body").hidden = general;
+  if (general) {
+    // The link card, drawn above.
+  } else if (agent && ui.sub === "sites") {
     draw("body", ["sites", state.sites, ui.siteError], renderSites);
-  } else if (ui.tab === "requests") {
+  } else if (agent && ui.sub === "requests") {
     draw("body", ["requests", state.blocked, state.bookmarksAllowed, state.uploadRecordings], renderRequests);
-  } else if (ui.tab === "server") {
+  } else if (agent) {
     draw("body", ["server", state.server, state.defaultServer, link.phase, ui.serverError, ui.confirmServer], renderServer);
   } else if (ui.tab === "language") {
     draw("body", ["language", state.languageOverride, state.browserLanguage], renderLanguage);
@@ -328,21 +346,35 @@ async function cancelPairing() {
 
 // --- settings ----------------------------------------------------------------------
 
+function tabButton(kind, tab, selected, choose) {
+  return el("button", {
+    type: "button",
+    role: "tab",
+    class: `${kind}${selected ? " selected" : ""}`,
+    "aria-selected": selected ? "true" : "false",
+    text: t(`settings.tabs.${tab}`),
+    onclick: () => {
+      choose();
+      ui.confirmUnpair = false;
+      render();
+    },
+  });
+}
+
 function renderTabs() {
   fill($("tabs"),
     ...TABS.map((tab) =>
-      el("button", {
-        type: "button",
-        role: "tab",
-        class: `tab${tab === ui.tab ? " selected" : ""}`,
-        "aria-selected": tab === ui.tab ? "true" : "false",
-        text: t(`settings.tabs.${tab}`),
-        onclick: () => {
-          ui.tab = tab;
-          localStorage.setItem("tab", tab);
-          ui.confirmUnpair = false;
-          render();
-        },
+      tabButton("tab", tab, tab === ui.tab, () => {
+        ui.tab = tab;
+        ui.sub = "general";
+        localStorage.setItem("tab", tab);
+      }),
+    ),
+  );
+  fill($("subtabs"),
+    ...SUBTABS.map((sub) =>
+      tabButton("subtab", sub, sub === ui.sub, () => {
+        ui.sub = sub;
       }),
     ),
   );

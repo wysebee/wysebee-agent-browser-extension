@@ -48,6 +48,8 @@
   },
   "settings": {
     "tabs": {
+      "agent": "Agent",
+      "general": "Général",
       "requests": "Autorisations",
       "sites": "Sites",
       "language": "Langue",

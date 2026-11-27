@@ -48,6 +48,8 @@
   },
   "settings": {
     "tabs": {
+      "agent": "智能体",
+      "general": "常规",
       "requests": "权限",
       "sites": "网站",
       "language": "语言",

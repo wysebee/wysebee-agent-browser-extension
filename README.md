@@ -42,7 +42,7 @@ and recolours the bee. No dependencies.
 (`http://localhost:8000`) or elsewhere. Give it any http or
 https address; it is built only when named, and never packaged. Rebuild it to change its
 default server, then reload it in `chrome://extensions` (or set the server in the side
-panel's **Server** tab). A pairing is with one cloud: after changing the server, pair again.
+panel's **Agent → Server** tab). A pairing is with one cloud: after changing the server, pair again.
 
 1. Open `chrome://extensions` (Edge: `edge://extensions`) and turn on **Developer mode**.
 2. **Load unpacked** and choose `dist/prod` or `dist/local`. They are separate
@@ -56,9 +56,9 @@ Chrome 116 or later.
 
 ## Self-hosted Wysebee Cloud
 
-The side panel's **Server** tab sets which Wysebee Cloud this browser pairs with. It
+The side panel's **Agent → Server** tab sets which Wysebee Cloud this browser pairs with. It
 defaults to `https://app.wysebee.com` (the build's server). To pair with your own Wysebee
-Cloud (`WYSEBEE_EDITION=selfhost`), open the **Server** tab, enter its address, such as
+Cloud (`WYSEBEE_EDITION=selfhost`), open the **Agent → Server** tab, enter its address, such as
 `http://localhost:8000` or `https://wysebee.example.com`, and **Save**. Then pair as usual:
 the code is typed in your server's web app.
 
@@ -118,7 +118,7 @@ check-in.
   also closes tabs and fakes network responses without asking; meant for a web app under
   automated test).
 - **Off until you turn them on**: Fake network responses and Record videos start blocked;
-  switch them to Allowed under **Permissions** in the side panel. Blocking one again ends what
+  switch them to Allowed under **Agent → Permissions** in the side panel. Blocking one again ends what
   is running (a recording is still saved).
 - **Fake network responses** (`browser_mock`, a web development tool): to test how an
   app handles errors, the agent can answer chosen requests on a tab with a status and

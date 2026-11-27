@@ -48,6 +48,8 @@
   },
   "settings": {
     "tabs": {
+      "agent": "代理",
+      "general": "一般",
       "requests": "權限",
       "sites": "網站",
       "language": "語言",

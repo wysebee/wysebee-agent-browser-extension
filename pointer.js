@@ -124,3 +124,22 @@ export function hideCommand() {
 export function caretCommand(ref) {
   return { caret: String(ref), caretMs: CARET_MS };
 }
+
+/**
+ * What browser_end_task leaves behind when the AI app says its whole task is over: the
+ * dot goes from every tab it was drawn on (`pointed`: the worker's memory and session
+ * storage, so repeats are fine), and the debugger lets go of every tab it holds
+ * (`attached`) — Chrome's "started debugging this browser" bar closes, and with it any
+ * faked responses, console/network logging and viewport change — except a tab being
+ * filmed (`filming`): a recording is ended only by browser_record's stop.
+ * `{hide, release, filming}`, each a sorted list of tab ids.
+ */
+export function endTaskPlan({ pointed = [], attached = [], filming = [] } = {}) {
+  const ids = (list) => [...new Set(list)].filter(Number.isInteger).sort((a, b) => a - b);
+  const filmed = new Set(ids(filming));
+  return {
+    hide: ids(pointed),
+    release: ids(attached).filter((t) => !filmed.has(t)),
+    filming: [...filmed],
+  };
+}

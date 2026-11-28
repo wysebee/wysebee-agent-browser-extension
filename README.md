@@ -137,7 +137,13 @@ check-in.
   debugging bar shows while it films (`video.js`, `ui/offscreen.js`, `webm.js`).
 - **The agent pointer**: a red dot shows where the agent's mouse is. Like a mouse cursor
   it stays where the agent left it, page loads included, until the agent is paused or
-  unpaired or has done nothing for five minutes.
+  unpaired, says its task is over, or has done nothing for five minutes.
+- **The end of a task** (`browser_end_task`): the AI app calls it once its whole task is
+  finished. The dot goes from every tab it was drawn on, and the debugger lets go of every
+  tab it holds (its bar closes; faked responses, console and network logging and a changed
+  viewport end) — except a tab being filmed, whose recording carries on until
+  `browser_record` stops it. It never asks, and does nothing when nothing is left showing.
+  Wysebee Cloud also leaves a notification from the agent on its Activity page.
 - **Permissions**: kinds of request refused on every site, real mouse input (through the
   browser's debugger) among them, and the one machine-wide switch that lets bookmarks be
   read without asking.

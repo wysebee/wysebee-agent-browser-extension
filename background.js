@@ -38,6 +38,7 @@ import {
   IDLE_MS,
   caretCommand,
   dragCommand,
+  endTaskPlan,
   hideCommand,
   pointerCommand,
   refClickCommand,
@@ -1272,7 +1273,10 @@ async function showPointer(tabId, cmd) {
   if (!cmd) return;
   try {
     const res = await runInPage(tabId, page.overlay, [{ ...cmd, idleMs: IDLE_MS }]);
-    if (Array.isArray(res?.at)) lastPointer.set(tabId, { point: res.at, at: Date.now() });
+    if (Array.isArray(res?.at)) {
+      lastPointer.set(tabId, { point: res.at, at: Date.now() });
+      void rememberPointed(tabId);
+    }
     else if (lastPointer.has(tabId)) lastPointer.get(tabId).at = Date.now(); // a caret: still active
     if (res?.lead > 0) await new Promise((r) => setTimeout(r, Math.min(res.lead, GLIDE.maxMs)));
     pointerSettlesAt = Date.now() + settleMs(cmd);
@@ -1299,14 +1303,68 @@ chrome.tabs.onUpdated.addListener((tabId, info) => {
     /* A page the extension cannot draw on (chrome://, the store): no dot there. */
   });
 });
-chrome.tabs.onRemoved.addListener((tabId) => void lastPointer.delete(tabId));
+chrome.tabs.onRemoved.addListener((tabId) => {
+  lastPointer.delete(tabId);
+  void forgetPointed(tabId);
+});
 
-/** Take the dot (and any caret) off one tab: its scenario is over. */
+// The tabs the dot was drawn on, kept in session storage as well: a worker that was stopped
+// forgets lastPointer, but the dot is still on those pages until it fades, and
+// browser_end_task must still find it there.
+async function pointedTabs() {
+  const { pointed } = await chrome.storage.session.get("pointed");
+  return Array.isArray(pointed) ? pointed : [];
+}
+
+async function rememberPointed(tabId) {
+  const pointed = await pointedTabs();
+  if (!pointed.includes(tabId)) await chrome.storage.session.set({ pointed: [...pointed, tabId] });
+}
+
+async function forgetPointed(tabId) {
+  const pointed = await pointedTabs();
+  if (pointed.includes(tabId)) await chrome.storage.session.set({ pointed: pointed.filter((t) => t !== tabId) });
+}
+
+/** Take the dot (and any caret) off one tab: its scenario is over. Resolves once it is off. */
 function hidePointer(tabId) {
   lastPointer.delete(tabId);
-  runInPage(tabId, page.overlay, [hideCommand()]).catch(() => {
-    /* Gone or not drawable: nothing to hide. */
+  void forgetPointed(tabId);
+  return runInPage(tabId, page.overlay, [hideCommand()]).then(
+    () => true,
+    () => false, /* Gone or not drawable: nothing to hide. */
+  );
+}
+
+/**
+ * browser_end_task: the AI app's whole task is over. The dot goes from every tab it was
+ * drawn on, the debugger lets go of every tab it holds (its bar closes, faked responses
+ * and logging stop) and an approved mouse gesture ends — but a recording carries on until
+ * browser_record stops it (pointer.js's endTaskPlan). Never asks: it only takes away what
+ * the agent left showing. Harmless when there is nothing to take away.
+ */
+async function endTask() {
+  const plan = endTaskPlan({
+    pointed: [...lastPointer.keys(), ...(await pointedTabs())],
+    attached: [...attached.keys()],
+    filming: [...videos.keys()],
   });
+  const hidden = await Promise.all(plan.hide.map((tabId) => hidePointer(tabId)));
+  await chrome.storage.session.remove(["pointed", "gesture"]);
+  for (const tabId of plan.release) {
+    await detachDebugger(tabId);
+    recorders.delete(tabId);
+  }
+  const now = Date.now();
+  return {
+    ended: true,
+    pointer_removed_from: plan.hide.filter((_, i) => hidden[i]),
+    debugger_released_from: plan.release,
+    recordings_running: plan.filming.map((tabId) => videoStatus(videos.get(tabId), now)),
+    ...(plan.filming.length
+      ? { note: "A recording is still running: call browser_record with action stop to end and save it." }
+      : {}),
+  };
 }
 
 /** Take the dot off every page it is on: the agent was paused or unpaired. */
@@ -1320,10 +1378,13 @@ function hidePointers() {
  */
 async function handle(op, args, ctx = null) {
   if (op === "ping") return {};
-  if (op !== "recording_saved" && !OPS.has(op)) throw new Error(`Unknown operation ${op}.`);
+  if (op !== "recording_saved" && op !== "browser_end_task" && !OPS.has(op)) throw new Error(`Unknown operation ${op}.`);
   // Wysebee's notice that a recording of this browser is saved: told to the
   // person, not judged by policy — it touches no tab and reads nothing.
   if (op === "recording_saved") return await notifyRecording(args);
+  // The AI app's task is over: take away what the agent left showing. No prompt — it only
+  // ends things, like stopping a recording.
+  if (op === "browser_end_task") return await endTask();
   // Stopping or asking about a scenario video changes nothing on any page: no prompt, so a
   // recording can always be ended, whatever the tab shows by then.
   if (op === "browser_record") {

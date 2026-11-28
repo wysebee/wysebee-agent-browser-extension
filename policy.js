@@ -14,6 +14,8 @@
 //   faking network responses        -> allow on an "allow everything" site, else ask (always)
 //   mouse, inside an approved gesture -> allow (same tab and site, for a short while)
 //   stopping a scenario video       -> allow  (background.js, before policy: it only ends one)
+//   ending the task (browser_end_task) -> allow (background.js, before policy: it only takes the
+//                                        dot and the debugger away)
 //   site marked "auto" or "full"    -> allow
 //   anything else                   -> ask    (reads and writes alike)
 //

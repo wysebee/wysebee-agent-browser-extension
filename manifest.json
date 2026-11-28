@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Wysebee Agent",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Pair this browser with Wysebee as an agent of its own, and let it see and control your tabs - only where and when you allow it.",
   "minimum_chrome_version": "116",
   "permissions": ["tabs", "scripting", "storage", "notifications", "alarms", "bookmarks", "debugger", "sidePanel", "offscreen", "downloads"],

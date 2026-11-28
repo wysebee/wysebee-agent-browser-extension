@@ -6,6 +6,7 @@ import {
   GLIDE,
   IDLE_MS,
   caretCommand,
+  endTaskPlan,
   dragCommand,
   hideCommand,
   pointerCommand,
@@ -120,4 +121,17 @@ test("the glide is a hand's pace: a fraction of a second, never more than about 
   assert.ok(Object.isFrozen(GLIDE));
   assert.ok(GLIDE.minMs >= 200 && GLIDE.minMs < GLIDE.maxMs && GLIDE.maxMs <= 1500);
   assert.ok(GLIDE.msPerDoubling > 0 && GLIDE.arc > 0 && GLIDE.maxArcPx > 0);
+});
+
+test("ending the task hides the dot everywhere it was and lets go of every tab not being filmed", () => {
+  assert.deepEqual(endTaskPlan({ pointed: [7, 3, 7, "x"], attached: [3, 9, 5], filming: [9, 9] }), {
+    hide: [3, 7],
+    release: [3, 5],
+    filming: [9],
+  });
+});
+
+test("ending a task that drew nothing and holds nothing does nothing", () => {
+  assert.deepEqual(endTaskPlan(), { hide: [], release: [], filming: [] });
+  assert.deepEqual(endTaskPlan({}), { hide: [], release: [], filming: [] });
 });
